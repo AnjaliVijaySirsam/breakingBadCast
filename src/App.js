@@ -1,50 +1,52 @@
-import React, { Component } from "react"
-import logo from "./logo.svg"
-import "./App.css"
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import Header from './components/ui/Header'
+import CharacterGrid from './components/characters/CharacterGrid'
+import Search from './components/ui/Search'
+import './App.css'
+import Pagination from './components/Pagination'
+// 
+const App = () => {
+  const [profile, setProfile] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [profilePerPage] = useState(8);
+  const [query, setQuery] = useState('')
 
-class LambdaDemo extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { loading: false, msg: null }
+  useEffect(() => {
+    const fetchItems = async () => {
+      setIsLoading(true)
+      const result = await axios(`https://www.breakingbadapi.com/api/characters?name=${query}`)
+
+      console.log(result.data)
+
+      setProfile(result.data)
+      setIsLoading(false)
+    }
+
+    fetchItems()
+  }, [query])
+  
+  const queryFunction = (q) =>{
+    setQuery(q)
   }
+  // Get current posts
+  const indexOfLastProfile = currentPage * profilePerPage;
+  const indexOfFirstProfile = indexOfLastProfile - profilePerPage;
+  const currentProfile = profile.slice(indexOfFirstProfile, indexOfLastProfile);
 
-  handleClick = api => e => {
-    e.preventDefault()
 
-    this.setState({ loading: true })
-    fetch("/.netlify/functions/" + api)
-      .then(response => response.json())
-      .then(json => this.setState({ loading: false, msg: json.msg }))
+  const paginate=(pageNumber) =>{
+    setCurrentPage(pageNumber)
   }
-
-  render() {
-    const { loading, msg } = this.state
-
-    return (
-      <p>
-        <button onClick={this.handleClick("hello")}>{loading ? "Loading..." : "Call Lambda"}</button>
-        <button onClick={this.handleClick("async-dadjoke")}>{loading ? "Loading..." : "Call Async Lambda"}</button>
-        <br />
-        <span>{msg}</span>
-      </p>
-    )
-  }
-}
-
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <LambdaDemo />
-        </header>
-      </div>
-    )
-  }
+  return (
+    <div className='container'>
+      <Header />
+      <Search getQuery={queryFunction} />
+      <CharacterGrid isLoading={isLoading} items={currentProfile} />
+      <Pagination profilePerPage={profilePerPage} totalProfile={profile.length} paginatee={paginate}/>
+    </div>
+  )
 }
 
 export default App
